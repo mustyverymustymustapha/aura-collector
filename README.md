@@ -1,3 +1,4 @@
+![IMG_0277](https://github.com/user-attachments/assets/7453664a-9c03-4221-a9c3-d9a32aa476a8)
 # 🌟 Aura Collector  
 
 *A minimalist yet addictive aura-collecting game.*  
