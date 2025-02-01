@@ -1,0 +1,327 @@
+<!-- note for hs reviewers: im kinda psychotic and write css before the html body-->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Aura Collector</title>
+        <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                background: #1a1a2e;
+                color: #fff;
+                font-family: 'VT323', monospace;
+                min-height: 100vh;
+                overflow-x: hidden;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            .header {
+                text-align: center;
+                margin-bottom: 40px;
+                font-family: 'Press Start 2P', cursive;
+                color: #4ecca3;
+                text-shadow: 0 0 10px rgba(78, 204, 163, 0.5);
+            }
+
+            .game-section {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
+                gap: 20px;
+                margin-bottom: 40px;
+            }
+
+            .aura-display {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 15px;
+                padding: 20px;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .aura {
+                width: 200px;
+                height: 200px;
+                margin: 0 auto;
+                border-radius: 50%;
+                position: relative;
+                transition: all 0.3s ease;
+            }
+
+            .stats-panel {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 15px;
+                padding: 20px;
+            }
+
+            .btn {
+                background: #4ecca3;
+                border: none;
+                padding: 15px 30px;
+                border-radius: 8px;
+                font-family: 'VT323', monospace;
+                font-size: 24px;
+                color: #1a1a2e;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                margin: 10px;
+            }
+
+            .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(78, 204, 163, 0.4);
+            }
+
+            .leaderboard {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 15px;
+                padding: 20px;
+                margin-top: 20px;
+            }
+
+            .leaderboard-title {
+                font-family: 'Press Start 2P', cursive;
+                font-size: 24px;
+                margin-bottom: 20px;
+                color: #4ecca3;
+            }
+
+            .leaderboard-list {
+                list-style: none;
+            }
+
+            .leaderboard-item {
+                display: flex;
+                justify-content: space-between;
+                padding: 10px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                font-size: 20px;
+            }
+
+            @keyframes glow {
+                0% { box-shadow: 0 0 20px currentColor; }
+                50% { box-shadow: 0 0 40px currentColor; }
+                100% { box-shadow: 0 0 20px currentColor; }
+            }
+
+            .aura-animation {
+                animation: glow 2s infinite;
+            }
+
+            .inventory {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 10px;
+                margin-top: 20px;
+                padding: 20px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 15px;
+            }
+
+            .inventory-item {
+                width: 100px;
+                height: 100px;
+                border-radius: 50%;
+                margin: 5px;
+                cursor: pointer;
+                transition: transform 0.3s ease;
+            }
+
+            .inventory-item:hover {
+                transform: scale(1.1);
+            }
+
+            @media (max-width: 768px) {
+                .game-section {
+                    grid-template-columns: 1fr;
+                }
+
+                .aura {
+                    width: 150px;
+                    height: 150px;
+                }
+
+                .inventory-item {
+                    width: 80px;
+                    height: 80px;
+                }
+            }
+
+        </style>
+
+    </head>
+    <body>
+        <div class="container">
+            <header class="header">
+                <h1>Aura Collector</h1>
+            </header>
+
+            <div class="game-section">
+                <div class="aura-display">
+                    <div class="aura"></div>
+                    <button class="btn" id="collectBtn">Collect Aura</button>
+                </div>
+                <div class="stats-panel">
+                    <h2>Stats</h2>
+                    <p>Auras Collected: <span id="totalAuras">0</span></p>
+                    <p>Rare Finds: <span id="rareFinds">0</span></p>
+                    <p>Epic Finds: <span id="epicFinds">0</span></p>
+                    <p>Legendary Finds: <span id="legendaryFinds">0</span></p>
+                </div>
+
+            </div>
+
+            <div class="inventory"></div>
+
+            <div class="leaderboard">
+                <h2 class="leaderboard-title">Top Collectors</h2>
+                <ul class="leaderboard-list"></ul>
+            </div>
+
+        </div>
+
+        <script>
+            class AuraGame {
+                constructor() {
+                    this.stats = this.loadStats();
+                    this.inventory = this.loadInventory();
+                    this.setupEventListeners();
+                    this.updateStats();
+                    this.updateLeaderboard();
+                }
+
+                loadStats() {
+                    return JSON.parse(localStorage.getItem('auraStats')) || {
+                        totalAuras: 0,
+                        rareFinds: 0,
+                        epicFinds: 0,
+                        legendaryFinds: 0
+                    };
+                }
+
+                loadInventory() {
+                    return JSON.parse(localStorage.getItem('auraInventory')) || [];
+                }
+
+                saveStats() {
+                    localStorage.setItem('auraStats', JSON.stringify(this.stats));
+                    localStorage.setItem('auraInventory', JSON.stringify(this.inventory));
+                }
+
+                setupEventListeners() {
+                    document.getElementById('collectBtn').addEventListener('click', () => this.collectAura());
+                }
+
+                generateAura() {
+                    const rarity = this.determineRarity();
+                    const colors = this.getColorsByRarity(rarity);
+                    return {
+                        id: Data.now(),
+                        rarity,
+                        colors,
+                        timestamp: new Date().toISOString()
+                    };
+                }
+
+                determineRarity() {
+                    const rand = Math.random();
+                    if (rand < 0.01) return 'legendary';
+                    if (rand < 0.05) return 'epic';
+                    if (rand < 0.15) return 'rare';
+                    return 'common';
+                }
+
+                getColorsByRarity(rarity) {
+                    const colors = {
+                        common: ['#4ecca3', '#45b293', '#3c9883'],
+                        rare: ['#4e54c8', '#8f94fb', '#4e54c8'],
+                        epic: ['#aa076b', '#61045f', '#aa076b'],
+                        legendary: ['#FFD700', '#FFA500', '#FF8C00']
+                    };
+                    return colors[rarity];
+                }
+
+                collectAura() {
+                    const aura = this.generateAura();
+                    this.inventory.push(aura);
+                    this.updateStats(aura.rarity);
+                    this.displayAura(aura);
+                    this.updateInventory();
+                    this.saveStats();
+                    this.updateLeaderboard();
+                }
+
+                updateStats(rarity) {
+                    this.stats.totalAuras++;
+                    if (rarity === 'rare') this.stats.rareFinds++;
+                    if (rarity === 'epic') this.stats.epicFinds++;
+                    if (rarity === 'legendary') this.stats.legendaryFinds++;
+
+                    document.getElementById('totalAuras').textContent = this.stats.totalAuras;
+                    document.getElementById('rareFinds').textContent = this.stats.rareFinds;
+                    document.getElementById('epicFinds').textContent = this.stats.epicFinds;
+                    document.getElementById('legendaryFinds').textContent = this.stats.legendaryFinds;
+                }
+
+                displayAura(aura) {
+                    const auraElement = document.querySelector('.aura');
+                    auraElement.style.background = `linear-gradient(45deg, ${aura.colors.join(', ')})`;
+                    auraElement.classList.add('aura-animation');
+                    setTimeout(() => auraElement.classList.remove('aura-animation'), 2000);
+                }
+
+                updateInventory() {
+                    const inventoryContainer = document.querySelector('.inventory');
+                    inventoryContainer.innerHTML = '';
+
+                    this.inventory.slice(-12).forEach(aura => {
+                        const auraElement = document.createElement('div');
+                        auraElement.className = 'inventory-item';
+                        auraElement.style.background = `linear-gradient(45deg, ${aura.colors.join(', ')})`;
+                        auraElement.title = `${aura.rarity.charAt(0).toUpperCase() + aura.rarity.slice(1)} Aura`;
+                        inventoryContainer.appendChild(auraElement);
+                    });
+                }
+
+                updateLeaderboard() {
+                    const leaderboardList = document.querySelector('.leaderboard-list');
+                    leaderboardList.innerHTML = '';
+
+                    const leaderboardData = [
+                        { name: 'Player', score: this.stats.totalAuras },
+                        { name: 'Bot1', score: Math.floor(Math.random() * this.stats.totalAuras) },
+                        { name: 'Bot2', score: Math.floor(Math.random() * this.stats.totalAuras) },
+                        { name: 'Bot3', score: Math.floor(Math.random() * this.stats.totalAuras) },
+                        { name: 'Bot4', score: Math.floor(Math.random() * this.stats.totalAuras) }
+                    ].sort((a, b) => b.score - a.score);
+
+                    leaderboardData.forEach((entry, index) => {
+                        const item = document.createElement('li');
+                        item.className = 'leaderboard-item';
+                        item.innerHTML = `
+                        <span>#${index + 1} ${entry.name}</span>
+                        <span>${entry.score} Auras</span>
+                        `;
+                        leaderboardList.appendChild(item);
+                    });
+                }
+
+            }
+
+            const game = new AuraGame();
+        </script>
+
+    </body>
+</html>
